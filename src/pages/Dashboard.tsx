@@ -1,20 +1,17 @@
 import React from 'react';
 import { useApp } from '@/context/AppContext';
-import { Ticket, BarChart3, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Ticket, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
-  const { tickets, currentUser } = useApp();
+  const { tickets } = useApp();
   const navigate = useNavigate();
 
-  const userTickets = currentUser?.role === 'empleado'
-    ? tickets.filter(t => t.createdBy === currentUser.id)
-    : tickets;
-
-  const open = userTickets.filter(t => t.status === 'Abierto').length;
-  const inProgress = userTickets.filter(t => t.status === 'En Proceso').length;
-  const resolved = userTickets.filter(t => t.status === 'Resuelto').length;
-  const highPriority = userTickets.filter(t => t.priority === 'Alta' && t.status !== 'Resuelto').length;
+  const visibleTickets = tickets;
+  const open = visibleTickets.filter(t => t.status === 'Abierto').length;
+  const inProgress = visibleTickets.filter(t => t.status === 'En Proceso').length;
+  const resolved = visibleTickets.filter(t => t.status === 'Resuelto').length;
+  const highPriority = visibleTickets.filter(t => t.priority === 'Alta' && t.status !== 'Resuelto').length;
 
   const stats = [
     { label: 'Abiertos', value: open, icon: Ticket, color: 'text-primary' },
@@ -23,13 +20,13 @@ const Dashboard: React.FC = () => {
     { label: 'Alta Prioridad', value: highPriority, icon: AlertTriangle, color: 'text-destructive' },
   ];
 
-  const recentTickets = [...userTickets].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
+  const recentTickets = [...visibleTickets].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
 
   return (
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Bienvenido, {currentUser?.name}</p>
+        <p className="text-sm text-muted-foreground">Resumen general de tickets</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -50,7 +47,7 @@ const Dashboard: React.FC = () => {
         </div>
         {recentTickets.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">
-            No hay tickets pendientes en tu cola. Buen trabajo.
+            No hay tickets recientes para mostrar.
           </div>
         ) : (
           <table className="w-full text-sm">

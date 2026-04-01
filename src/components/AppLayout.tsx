@@ -1,12 +1,12 @@
-/*
+
 import React from "react";
 import { Outlet, Navigate } from "react-router-dom";
 import { useApp } from "@/context/AppContext";
-import AppSidebar from "@/components/AppSidebar";
+import AppSidebar from "./AppSidebar.tsx";
 
 const AppLayout: React.FC = () => {
   const { currentUser } = useApp();
-  if (!currentUser) return <Navigate to="/login" replace />;
+  //if (!currentUser) return <Navigate to="/login" replace />;
 
   return (
     <div className="flex min-h-screen w-full">
@@ -19,4 +19,4 @@ const AppLayout: React.FC = () => {
 };
 
 export default AppLayout;
-*/
+
