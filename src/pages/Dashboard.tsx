@@ -1,97 +1,81 @@
-import React from 'react';
-import { useApp } from '@/context/AppContext';
-import { Ticket, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTickets } from "@/contexts/TicketContext";
+import { Box, Heading, Text, Card, SimpleGrid, Flex, Badge } from "@chakra-ui/react";
+import { Ticket, Clock, CheckCircle, AlertTriangle } from "lucide-react";
 
 const Dashboard: React.FC = () => {
-  const { tickets } = useApp();
-  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { tickets } = useTickets();
 
-  const visibleTickets = tickets;
-  const open = visibleTickets.filter(t => t.status === 'Abierto').length;
-  const inProgress = visibleTickets.filter(t => t.status === 'En Proceso').length;
-  const resolved = visibleTickets.filter(t => t.status === 'Resuelto').length;
-  const highPriority = visibleTickets.filter(t => t.priority === 'Alta' && t.status !== 'Resuelto').length;
+  const userTickets = tickets.filter((t) => t.createdBy === user?.id);
+  const open = userTickets.filter((t) => t.status === "Abierto").length;
+  const inProgress = userTickets.filter((t) => t.status === "En Proceso").length;
+  const resolved = userTickets.filter((t) => t.status === "Resuelto").length;
 
   const stats = [
-    { label: 'Abiertos', value: open, icon: Ticket, color: 'text-primary' },
-    { label: 'En Proceso', value: inProgress, icon: Clock, color: 'text-warning' },
-    { label: 'Resueltos', value: resolved, icon: CheckCircle2, color: 'text-success' },
-    { label: 'Alta Prioridad', value: highPriority, icon: AlertTriangle, color: 'text-destructive' },
+    { label: "Abiertos", value: open, icon: AlertTriangle, color: "orange.500" },
+    { label: "En Proceso", value: inProgress, icon: Clock, color: "blue.500" },
+    { label: "Resueltos", value: resolved, icon: CheckCircle, color: "green.500" },
+    { label: "Total", value: userTickets.length, icon: Ticket, color: "gray.700" },
   ];
 
-  const recentTickets = [...visibleTickets].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
+  const priorityColor = (p: string) =>
+    p === "Alta" ? "red" : p === "Media" ? "orange" : "gray";
+
+  const statusColor = (s: string) =>
+    s === "Abierto" ? "orange" : s === "En Proceso" ? "blue" : "green";
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Resumen general de tickets</p>
-      </div>
+    <Box>
+      <Heading size="lg" mb="1">Dashboard</Heading>
+      <Text color="gray.500" mb="6">Bienvenido, {user?.name}</Text>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map(s => (
-          <div key={s.label} className="bg-card border border-border rounded-lg p-4 shadow-corp">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold uppercase text-muted-foreground">{s.label}</p>
-              <s.icon className={`w-4 h-4 ${s.color}`} />
-            </div>
-            <p className="text-2xl font-semibold text-foreground mt-2">{s.value}</p>
-          </div>
+      <SimpleGrid columns={{ base: 1, sm: 2, lg: 4 }} gap="4">
+        {stats.map((s) => (
+          <Card.Root key={s.label}>
+            <Card.Header pb="2">
+              <Flex justifyContent="space-between" alignItems="center">
+                <Text fontSize="sm" fontWeight="medium" color="gray.500">{s.label}</Text>
+                <s.icon size={20} color={s.color} />
+              </Flex>
+            </Card.Header>
+            <Card.Body pt="0">
+              <Text fontSize="3xl" fontWeight="bold">{s.value}</Text>
+            </Card.Body>
+          </Card.Root>
         ))}
-      </div>
+      </SimpleGrid>
 
-      <div className="bg-card border border-border rounded-lg shadow-corp">
-        <div className="p-4 border-b border-border">
-          <h2 className="text-sm font-semibold text-foreground">Tickets Recientes</h2>
-        </div>
-        {recentTickets.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">
-            No hay tickets recientes para mostrar.
-          </div>
+      <Box mt="8">
+        <Heading size="md" mb="4">Tickets Recientes</Heading>
+        {userTickets.length === 0 ? (
+          <Text color="gray.500">No tienes tickets aún.</Text>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-secondary/50">
-                <th className="text-left px-4 py-2 text-xs font-bold uppercase text-muted-foreground">ID</th>
-                <th className="text-left px-4 py-2 text-xs font-bold uppercase text-muted-foreground">Título</th>
-                <th className="text-left px-4 py-2 text-xs font-bold uppercase text-muted-foreground">Prioridad</th>
-                <th className="text-left px-4 py-2 text-xs font-bold uppercase text-muted-foreground">Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentTickets.map(t => (
-                <tr
-                  key={t.id}
-                  onClick={() => navigate(`/ticket/${t.id}`)}
-                  className="border-b border-border hover:bg-secondary/30 cursor-pointer transition-colors h-10"
-                >
-                  <td className="px-4 py-2 font-mono text-xs text-muted-foreground">{t.id}</td>
-                  <td className="px-4 py-2 text-foreground">{t.title}</td>
-                  <td className="px-4 py-2">
-                    <PriorityBadge priority={t.priority} />
-                  </td>
-                  <td className="px-4 py-2">
-                    <StatusBadge status={t.status} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <Box display="flex" flexDirection="column" gap="3">
+            {userTickets.slice(0, 5).map((t) => (
+              <Card.Root key={t.id} cursor="pointer" _hover={{ shadow: "md" }} transition="shadow 0.2s">
+                <Card.Body p="4">
+                  <Flex alignItems="center" justifyContent="space-between">
+                    <Box>
+                      <Text fontWeight="medium">{t.title}</Text>
+                      <Text fontSize="sm" color="gray.500">
+                        {t.id} · {t.category} · {new Date(t.createdAt).toLocaleDateString("es-MX")}
+                      </Text>
+                    </Box>
+                    <Flex gap="2">
+                      <Badge colorPalette={priorityColor(t.priority)} variant="subtle">{t.priority}</Badge>
+                      <Badge colorPalette={statusColor(t.status)} variant="subtle">{t.status}</Badge>
+                    </Flex>
+                  </Flex>
+                </Card.Body>
+              </Card.Root>
+            ))}
+          </Box>
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
-};
-
-export const PriorityBadge: React.FC<{ priority: string }> = ({ priority }) => {
-  const cls = priority === 'Alta' ? 'bg-destructive/10 text-destructive' : priority === 'Media' ? 'bg-warning/10 text-warning' : 'bg-secondary text-muted-foreground';
-  return <span className={`px-2 py-0.5 rounded text-xs font-medium ${cls}`}>{priority}</span>;
-};
-
-export const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
-  const cls = status === 'Resuelto' ? 'bg-success/10 text-success' : status === 'En Proceso' ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground';
-  return <span className={`px-2 py-0.5 rounded text-xs font-medium ${cls}`}>{status}</span>;
 };
 
 export default Dashboard;
